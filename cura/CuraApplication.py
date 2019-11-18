@@ -717,6 +717,10 @@ class CuraApplication(QtApplication):
     def setDefaultPath(self, key, default_path):
         self.getPreferences().setValue("local_file/%s" % key, QUrl(default_path).toLocalFile())
 
+    @pyqtProperty(bool, constant=True)
+    def isEnterpriseVersion(self) -> bool:
+        return ApplicationMetadata.IsEnterpriseVersion
+
     ##  Handle loading of all plugin types (and the backend explicitly)
     #   \sa PluginRegistry
     def _loadPlugins(self) -> None:
