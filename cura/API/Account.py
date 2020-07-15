@@ -1,7 +1,7 @@
 # Copyright (c) 2018 Ultimaker B.V.
 # Cura is released under the terms of the LGPLv3 or higher.
 from datetime import datetime
-from typing import Optional, Dict, TYPE_CHECKING, Union
+from typing import Optional, Dict, TYPE_CHECKING, Callable
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, pyqtProperty, QTimer, Q_ENUMS
 
@@ -10,7 +10,7 @@ from UM.Message import Message
 from UM.i18n import i18nCatalog
 from cura.OAuth2.AuthorizationService import AuthorizationService
 from cura.OAuth2.Models import OAuth2Settings
-from cura.UltimakerCloud import UltimakerCloudAuthentication
+from cura.UltimakerCloud import UltimakerCloudConstants
 
 if TYPE_CHECKING:
     from cura.CuraApplication import CuraApplication
@@ -56,6 +56,7 @@ class Account(QObject):
     lastSyncDateTimeChanged = pyqtSignal()
     syncStateChanged = pyqtSignal(int)  # because SyncState is an int Enum
     manualSyncEnabledChanged = pyqtSignal(bool)
+    updatePackagesEnabledChanged = pyqtSignal(bool)
 
     def __init__(self, application: "CuraApplication", parent = None) -> None:
         super().__init__(parent)
@@ -66,10 +67,12 @@ class Account(QObject):
         self._logged_in = False
         self._sync_state = SyncState.IDLE
         self._manual_sync_enabled = False
+        self._update_packages_enabled = False
+        self._update_packages_action = None  # type: Optional[Callable]
         self._last_sync_str = "-"
 
         self._callback_port = 32118
-        self._oauth_root = UltimakerCloudAuthentication.CuraCloudAccountAPIRoot
+        self._oauth_root = UltimakerCloudConstants.CuraCloudAccountAPIRoot
 
         self._oauth_settings = OAuth2Settings(
             OAUTH_SERVER_URL= self._oauth_root,
@@ -91,7 +94,7 @@ class Account(QObject):
         self._update_timer.setInterval(int(self.SYNC_INTERVAL * 1000))
         # The timer is restarted explicitly after an update was processed. This prevents 2 concurrent updates
         self._update_timer.setSingleShot(True)
-        self._update_timer.timeout.connect(self.syncRequested)
+        self._update_timer.timeout.connect(self.sync)
 
         self._sync_services = {}  # type: Dict[str, int]
         """contains entries "service_name" : SyncState"""
@@ -102,6 +105,11 @@ class Account(QObject):
         self._authorization_service.onAuthenticationError.connect(self._onLoginStateChanged)
         self._authorization_service.accessTokenChanged.connect(self._onAccessTokenChanged)
         self._authorization_service.loadAuthDataFromPreferences()
+
+
+    @pyqtProperty(int, notify=syncStateChanged)
+    def syncState(self):
+        return self._sync_state
 
     def setSyncState(self, service_name: str, state: int) -> None:
         """ Can be used to register sync services and update account sync states
@@ -137,6 +145,18 @@ class Account(QObject):
                 # schedule new auto update after syncing completed (for whatever reason)
                 if not self._update_timer.isActive():
                     self._update_timer.start()
+
+    def setUpdatePackagesAction(self, action: Callable) -> None:
+        """ Set the callback which will be invoked when the user clicks the update packages button
+
+        Should be invoked after your service sets the sync state to SYNCING and before setting the
+        sync state to SUCCESS.
+
+        Action will be reset to None when the next sync starts
+        """
+        self._update_packages_action = action
+        self._update_packages_enabled = True
+        self.updatePackagesEnabledChanged.emit(self._update_packages_enabled)
 
     def _onAccessTokenChanged(self):
         self.accessTokenChanged.emit()
@@ -180,6 +200,9 @@ class Account(QObject):
         sync is currently running, a sync will be requested.
         """
 
+        self._update_packages_action = None
+        self._update_packages_enabled = False
+        self.updatePackagesEnabledChanged.emit(self._update_packages_enabled)
         if self._update_timer.isActive():
             self._update_timer.stop()
         elif self._sync_state == SyncState.SYNCING:
@@ -246,6 +269,10 @@ class Account(QObject):
     def manualSyncEnabled(self) -> bool:
         return self._manual_sync_enabled
 
+    @pyqtProperty(bool, notify=updatePackagesEnabledChanged)
+    def updatePackagesEnabled(self) -> bool:
+        return self._update_packages_enabled
+
     @pyqtSlot()
     @pyqtSlot(bool)
     def sync(self, user_initiated: bool = False) -> None:
@@ -255,10 +282,13 @@ class Account(QObject):
         self._sync()
 
     @pyqtSlot()
+    def onUpdatePackagesClicked(self) -> None:
+        if self._update_packages_action is not None:
+            self._update_packages_action()
+
+    @pyqtSlot()
     def popupOpened(self) -> None:
         self._setManualSyncEnabled(True)
-        self._sync_state = SyncState.IDLE
-        self.syncStateChanged.emit(self._sync_state)
 
     @pyqtSlot()
     def logout(self) -> None:
