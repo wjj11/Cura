@@ -1,7 +1,7 @@
 # Copyright (c) 2017 Ultimaker B.V.
 # Cura is released under the terms of the LGPLv3 or higher.
 
-from . import MonitorStage
+from . import PrintControlStage
 
 
 from UM.i18n import i18nCatalog
@@ -10,14 +10,14 @@ i18n_catalog = i18nCatalog("cura")
 
 def getMetaData():
     return {
-        # "stage": {
-        #     "name": i18n_catalog.i18nc("@item:inmenu", "Monitor"),
-        #     "weight": 30
-        # }
+        "stage": {
+            "name": i18n_catalog.i18nc("@item:inmenu", "打印控制"),
+            "weight": 40
+        }
     }
 
 
 def register(app):
     return {
-        # "stage": MonitorStage.MonitorStage()
+        "stage": PrintControlStage.PrintControlStage()
     }

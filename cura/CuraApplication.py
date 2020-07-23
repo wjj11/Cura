@@ -48,6 +48,8 @@ from UM.Workspace.WorkspaceReader import WorkspaceReader
 from UM.i18n import i18nCatalog
 from cura import ApplicationMetadata
 from cura.API import CuraAPI
+from cura.Temperature import CuraTemperature     #修改部分：添加温控模块的控制
+from cura.PrintControl import CuraPrintControl
 from cura.API.Account import Account
 from cura.Arranging.Arrange import Arrange
 from cura.Arranging.ArrangeObjectsAllBuildPlatesJob import ArrangeObjectsAllBuildPlatesJob
@@ -214,6 +216,8 @@ class CuraApplication(QtApplication):
         self._quality_profile_drop_down_menu_model = None
         self._custom_quality_profile_drop_down_menu_model = None
         self._cura_API = CuraAPI(self)
+        self._cura_Temperature = CuraTemperature(self)
+        self._cura_PrintControl = CuraPrintControl(self)  #修改部分:初始化控制对象
 
         self._physics = None
         self._volume = None
@@ -253,6 +257,55 @@ class CuraApplication(QtApplication):
         self._container_registry = None # type: CuraContainerRegistry
         from cura.CuraPackageManager import CuraPackageManager
         self._package_manager_class = CuraPackageManager
+
+        # 修改部分：添加串口通讯模块初始化
+        from cura.Settings.SettingSerialCommunication import SettingSerialCommunication
+        self.serial_communication = SettingSerialCommunication()
+        self.serial_communication.reciveSignal.connect(self.showErrors)
+        self.serial_communication.conditionReadySignal.connect(self.conditionReady)
+        self.serial_communication.connectTempSignal.connect(self.nozzleTemp)
+        self.serial_communication.noconnectTempSignal.connect(self.no_nozzle)
+        self.serial_communication.reciveTipSignal.connect(self.showTips)
+
+        self._cura_Temperature._temp.reciveSignal.connect(self.showErrors)
+        self._cura_Temperature._temp.reciveTipSignal.connect(self.showTips)
+
+        self._cura_PrintControl._print.printNotPrepare.connect(self.showErrors)
+        # print(spammodule.system("D:/ear_left.stl"))
+
+    # 修改部分：接收到喷头还完的操作
+    def no_nozzle(self) -> None:
+        self.print_nozzle_grabed = False
+        self.print_methond = -1
+
+    # 修改部分：接收到喷头还完的操作
+    def nozzleTemp(self) -> None:
+        self.print_nozzle_grabed = True
+        self.showTips("打印喷头抓取完成", 0)
+
+    # 修改部分：条件准备完成
+    def conditionReady(self) -> None:
+        self.print_condition = True
+
+    # 修改部分：添加接受极限信号
+    def showTips(self, showmessage, value) -> None:
+        self.send_info_message = Message(showmessage,
+                                         lifetime=0,
+                                         dismissable=False,
+                                         title="Tip Info")
+        self.send_info_message.show()
+        if value == 1:
+            self.print_condition = True
+
+    # 修改部分：添加接受极限信号
+    def showErrors(self, showmessage) -> None:
+        print(showmessage)
+        self.send_info_message = Message(showmessage,
+                                         lifetime=0,
+                                         dismissable=False,
+                                         title="Error Info")
+        self.send_info_message.show()
+
 
     @pyqtProperty(str, constant=True)
     def ultimakerCloudApiRootUrl(self) -> str:
@@ -841,6 +894,29 @@ class CuraApplication(QtApplication):
         self._auto_save = AutoSave(self)
         self._auto_save.initialize()
 
+        # 修改部分：打开串口
+        self.is_communicated = self.serial_communication.open_port()
+        if (self.is_communicated == True):
+            print("success")
+        else:
+            print("fail")
+            qmlfile_path = Resources.getPath(self.ResourceTypes.QmlFiles, "Dialogs\ConnectFailedDialog.qml")
+            self.dialog = Application.getInstance().createQmlComponent(qmlfile_path)
+            self.dialog.open()
+
+        # 修改部分：添加温控运行状态列表和打印状态
+        self.temp_state_list = [False, False, False, False, False]
+        self.print_state = [False, False]
+        self.print_percent = 0.0  # 打印百分比
+        self.count_number = 1  # 打印总层数
+        self.print_index = 0  # 打印行数
+        self.print_layer = 0  # 当前打印层数
+        self.print_thread = None
+        self.gongliao_state = False
+        self.print_methond = -1
+        self.print_nozzle_grabed = False
+        self.print_condition = False
+
         self.exec_()
 
     def __setUpSingleInstanceServer(self):
@@ -1080,6 +1156,12 @@ class CuraApplication(QtApplication):
     def getCuraAPI(self, *args, **kwargs) -> "CuraAPI":
         return self._cura_API
 
+    def getCuraTemperature(self, *args, **kwargs) -> "CuraTemperature":   #修改部分:获得对象方法
+        return self._cura_Temperature
+
+    def getPrintControl(self, *args, **kwargs) -> "CuraPrintControl":
+        return self._cura_PrintControl
+
     def registerObjects(self, engine):
         """Registers objects for the QML engine to use.
 
@@ -1158,6 +1240,12 @@ class CuraApplication(QtApplication):
         from cura.API import CuraAPI
         qmlRegisterSingletonType(CuraAPI, "Cura", 1, 1, "API", self.getCuraAPI)
         qmlRegisterUncreatableType(Account, "Cura", 1, 0, "AccountSyncState", "Could not create AccountSyncState")
+
+        from cura.Temperature import CuraTemperature  #修改部分:注册对象
+        qmlRegisterSingletonType(CuraTemperature, "Cura", 1, 1, "Temperature", self.getCuraTemperature)
+
+        from cura.PrintControl import CuraPrintControl
+        qmlRegisterSingletonType(CuraPrintControl, "Cura", 1, 1, "PrintControl", self.getPrintControl)
 
         # As of Qt5.7, it is necessary to get rid of any ".." in the path for the singleton to work.
         actions_url = QUrl.fromLocalFile(os.path.abspath(Resources.getPath(CuraApplication.ResourceTypes.QmlFiles, "Actions.qml")))
@@ -1640,6 +1728,58 @@ class CuraApplication(QtApplication):
 
     fileLoaded = pyqtSignal(str)
     fileCompleted = pyqtSignal(str)
+
+    @pyqtSlot(QUrl, bool)  # 修改部分：文件读取并展示相应内容
+    def readLocalFile(self, file, skip_project_file_check=False):
+        if not file.isValid():
+            return
+
+        scene = self.getController().getScene()
+
+        for node in DepthFirstIterator(scene.getRoot()):
+            if node.callDecoration("isBlockSlicing"):
+                self.deleteAll()
+                break
+
+        if not skip_project_file_check and self.checkIsValidProjectFile(file):
+            self.callLater(self.openProjectFile.emit, file)
+            return
+
+        if self.getPreferences().getValue("cura/select_models_on_load"):
+            Selection.clear()
+
+        f = file.toLocalFile()
+        extension = os.path.splitext(f)[1]
+        extension = extension.lower()
+        filename = os.path.basename(f)
+        if len(self._currently_loading_files) > 0:
+            # If a non-slicable file is already being loaded, we prevent loading of any further non-slicable files
+            if extension in self._non_sliceable_extensions:
+                message = Message(
+                    self._i18n_catalog.i18nc("@info:status",
+                                             "Only one G-code file can be loaded at a time. Skipped importing {0}",
+                                             filename), title=self._i18n_catalog.i18nc("@info:title", "Warning"))
+                message.show()
+                return
+            # If file being loaded is non-slicable file, then prevent loading of any other files
+            extension = os.path.splitext(self._currently_loading_files[0])[1]
+            extension = extension.lower()
+            if extension in self._non_sliceable_extensions:
+                message = Message(
+                    self._i18n_catalog.i18nc("@info:status",
+                                             "Can't open any other file if G-code is loading. Skipped importing {0}",
+                                             filename), title=self._i18n_catalog.i18nc("@info:title", "Error"))
+                message.show()
+                return
+
+        self._currently_loading_files.append(f)
+        if extension in self._non_sliceable_extensions:
+            self.deleteAll(only_selectable=False)
+
+        job = ReadMeshJob(f)
+        job.finished.connect(self._readMeshFinished)
+        job.start()
+
 
     def _reloadMeshFinished(self, job) -> None:
         """
