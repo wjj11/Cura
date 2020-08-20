@@ -178,9 +178,9 @@ Rectangle
             id: timer
             interval:1500;running:true; repeat:false
             onTriggered:{
-                var list =  Cura.Temperature.temp.getCurrentTemp()
-                hjSetRect.number = list[0]/10
-                hwtSetRect.number = list[1]/10
+                //var list =  Cura.Temperature.temp.getCurrentTemp()
+                //hjSetRect.number = list[0]/10
+               // hwtSetRect.number = list[1]/10
                 if(Cura.Temperature.temp.getPrintNozzleGrad() == 0) {
                     dwzgSetRect.number = list[2]/10
                     dwztSetRect.number = list[3]/10
