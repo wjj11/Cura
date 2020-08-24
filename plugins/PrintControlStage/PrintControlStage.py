@@ -5,16 +5,6 @@ from UM.Application import Application
 from UM.PluginRegistry import PluginRegistry
 from cura.Stages.CuraStage import CuraStage
 
-import vtk
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtOpenGL import QGLWidget
-
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtOpenGL import QGLWidget
 
 
 ##  Stage for monitoring a 3D printing while it's printing.
