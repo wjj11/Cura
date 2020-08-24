@@ -8,11 +8,11 @@ import QtQuick.Controls.Styles 1.4
 import QtQuick.Layouts 1.1
 import QtQuick.Dialogs 1.2
 
-import QtQuick.Scene3D 2.0
-import Qt3D.Core 2.0
-import Qt3D.Render 2.0
-import Qt3D.Input 2.0
-import Qt3D.Extras 2.0
+//import QtQuick.Scene3D 2.0
+//import Qt3D.Core 2.0
+//import Qt3D.Render 2.0
+//import Qt3D.Input 2.0
+//import Qt3D.Extras 2.0
 
 import UM 1.3 as UM
 import Cura 1.1 as Cura
@@ -374,69 +374,69 @@ Rectangle
     }
 
 
-    Scene3D
-    {
-        //anchors.fill: parent
-        anchors{
-            top: countLabel.bottom
-            topMargin: 10
-            left: frame.right
-            leftMargin: 30
-        }
-        height:200
-        width: 200
+    //Scene3D
+    //{
 
-        aspects: ["input", "logic"]
-        cameraAspectRatioMode: Scene3D.AutomaticAspectRatio
+        //anchors{
+            //top: countLabel.bottom
+            //topMargin: 10
+           // left: frame.right
+            //leftMargin: 30
+        //}
+       // height:200
+        //width: 200
 
-        Entity
-        {
-            id: sceneRoot
+        //aspects: ["input", "logic"]
+        //cameraAspectRatioMode: Scene3D.AutomaticAspectRatio
 
-            Camera
-            {
-                id: camera
-                projectionType: CameraLens.PerspectiveProjection
-                fieldOfView: 150
-                aspectRatio: 4/3
-                nearPlane : 0.1
-                farPlane : 2000.0
-                position: Qt.vector3d(-8.0, 20.0, 70.0 )
-                upVector: Qt.vector3d( 0.0, 0.0, 0.0 )
-                viewCenter: Qt.vector3d( 0.0, 100.0, 0.0 )
-            }
+       // Entity
+        //{
+           // id: sceneRoot
 
-            OrbitCameraController
-            {
-                camera: camera
-            }
+            //Camera
+            //{
+                //id: camera
+                //projectionType: CameraLens.PerspectiveProjection
+                //fieldOfView: 150
+                //aspectRatio: 4/3
+                //nearPlane : 0.1
+                //farPlane : 2000.0
+               // position: Qt.vector3d(-8.0, 20.0, 70.0 )
+                //upVector: Qt.vector3d( 0.0, 0.0, 0.0 )
+                //viewCenter: Qt.vector3d( 0.0, 100.0, 0.0 )
+            //}
 
-            components: [
-                RenderSettings
-                {
-                    activeFrameGraph: ForwardRenderer
-                    {
-                        clearColor: Qt.rgba(0, 0.5, 1, 1)
-                        camera: camera
-                    }
-                },
-                InputSettings
-                {
-                }
-            ]
+            //OrbitCameraController
+            //{
+                //camera: camera
+           // }
 
-            Entity
-            {
-                id: monkeyEntity
-                components: [
-                    SceneLoader
-                    {
-                        id: sceneLoader
-                    }
-                ]
-            }
-        }
-    }
+            //components: [
+                //RenderSettings
+                //{
+                   // activeFrameGraph: ForwardRenderer
+                    //{
+                      //  clearColor: Qt.rgba(0, 0.5, 1, 1)
+                       // camera: camera
+                    //}
+                //},
+               // InputSettings
+                //{
+                //}
+            //]
+
+            //Entity
+            //{
+                //id: monkeyEntity
+                //components: [
+                    //SceneLoader
+                    //{
+                       // id: sceneLoader
+                    //}
+               // ]
+            //}
+       // }
+    //}
 
 
     // 防止拖入模型响应事件
