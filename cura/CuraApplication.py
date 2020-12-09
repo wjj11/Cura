@@ -527,7 +527,8 @@ class CuraApplication(QtApplication):
 
         if not self.getIsHeadLess():
             try:
-                self.setWindowIcon(QIcon(Resources.getPath(Resources.Images, "cura-icon.png")))
+                #self.setWindowIcon(QIcon(Resources.getPath(Resources.Images, "cura-icon.png")))  #修改部分：改变图标
+                self.setWindowIcon(QIcon(Resources.getPath(Resources.Images, "dayin.png")))  # 修改部分：改变图标
             except FileNotFoundError:
                 Logger.log("w", "Unable to find the window icon.")
 

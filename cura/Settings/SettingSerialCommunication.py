@@ -125,12 +125,12 @@ class SettingSerialCommunication(QObject):
                 ser = serial.Serial(obj.get("port"), obj.get("bps"), timeout=45)
                 self.ser_arr.append(ser)
                 print(index)
-                if(ser.is_open):
-                    ret = True
-                    if(index ==0) :
-                        threading.Thread(target=SettingSerialCommunication.read_utf_data, args=(self, ser,),daemon=True).start()
-                    elif(index ==1):
-                        threading.Thread(target=SettingSerialCommunication.read_byte_data, args=(self, ser,),daemon=True).start()
+                # if(ser.is_open):
+                #     ret = True
+                #     if(index ==0) :
+                #         threading.Thread(target=SettingSerialCommunication.read_utf_data, args=(self, ser,),daemon=True).start()
+                #     elif(index ==1):
+                #         threading.Thread(target=SettingSerialCommunication.read_byte_data, args=(self, ser,),daemon=True).start()
 
 
         except Exception as e:

@@ -21,18 +21,36 @@ Item
 
     Image
     {
-        id: logo
-        anchors.left: parent.left
-        anchors.leftMargin: UM.Theme.getSize("default_margin").width
-        anchors.verticalCenter: parent.verticalCenter
+        //id: logo
+        //anchors.left: parent.left
+        //anchors.leftMargin: UM.Theme.getSize("default_margin").width
+        //anchors.verticalCenter: parent.verticalCenter
 
-        source: UM.Theme.getImage("logo")
-        width: UM.Theme.getSize("logo").width
-        height: UM.Theme.getSize("logo").height
-        fillMode: Image.PreserveAspectFit
-        sourceSize.width: width
-        sourceSize.height: height
+        //source: UM.Theme.getImage("logo")
+        //width: UM.Theme.getSize("logo").width
+        //height: UM.Theme.getSize("logo").height
+        //fillMode: Image.PreserveAspectFit
+        //sourceSize.width: width
+        //sourceSize.height: height
     }
+
+//修改部分：添加title
+    Text
+            {
+                id: logo
+                anchors.left: parent.left
+                anchors.leftMargin: UM.Theme.getSize("default_margin").width
+                anchors.verticalCenter: parent.verticalCenter
+
+                text: "ZD-BP"
+                verticalAlignment: Text.AlignVCenter
+                horizontalAlignment: Text.AlignHCenter
+                font.family: "Helvetica"
+                font.pixelSize: 25
+                wrapMode: Text.WordWrap
+                color: "#ffffff"
+
+            }
 
     Row
     {
